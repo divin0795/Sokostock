@@ -1,0 +1,23 @@
+{% extends 'base_app.html' %}
+{% block title %}Supprimer{% endblock %}
+{% block page_title %}Confirmer la suppression{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:460px;">
+    <div class="card-body" style="text-align:center; padding:40px;">
+        <div style="font-size:3rem; margin-bottom:16px;">⚠️</div>
+        <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">Supprimer {{ produit.nom }} ?</h2>
+        <p style="color:var(--text-secondary); font-size:0.875rem; margin-bottom:28px;">
+            Le produit sera archivé (désactivé) et ne sera plus visible dans le catalogue.
+            L'historique des ventes sera conservé.
+        </p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Oui, supprimer</button>
+            </form>
+            <a href="{% url 'liste_produits' %}" class="btn btn-outline">Annuler</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

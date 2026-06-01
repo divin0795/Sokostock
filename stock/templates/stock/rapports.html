@@ -1,0 +1,206 @@
+{% extends 'base_app.html' %}
+{% block title %}Rapports{% endblock %}
+{% block page_title %}Rapports & Analyses{% endblock %}
+
+{% block topbar_actions %}
+<div style="display:flex; gap:8px; align-items:center;">
+    <span style="font-size:0.82rem; color:var(--text-muted);">Période :</span>
+    {% for nb, label in periods %}
+    <a href="?periode={{ nb }}" class="chip {% if periode == nb|stringformat:'s' %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Styles de base (Ordinateur) */
+    .kpi-row { 
+        display: grid; 
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 16px; 
+        margin-bottom: 24px; 
+    }
+    .chart-row { 
+        display: grid; 
+        grid-template-columns: 2fr 1fr; 
+        gap: 20px; 
+        margin-bottom: 20px; 
+    }
+    .chart-box { height: 260px; position:relative; }
+    .vente-row td:nth-child(3) { font-family: var(--font-mono); font-weight: 700; }
+
+    /* 📱 ADAPTATION MOBILE (C'est ici que ça se joue) */
+    @media (max-width: 768px) {
+        /* On force les lignes à devenir des colonnes */
+        .kpi-row, .chart-row, .grid-2 {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+        }
+
+        /* On ajuste le titre de la page qui pousse le menu */
+        header.topbar {
+            flex-wrap: wrap;
+            height: auto !important;
+            padding: 10px !important;
+        }
+
+        /* Les boutons de période (7j, 30j...) */
+        .topbar-actions, [block="topbar_actions"] {
+            width: 100%;
+            overflow-x: auto; /* Permet de défiler les boutons s'ils sont trop larges */
+            padding-bottom: 5px;
+        }
+
+        /* On réduit un peu la taille des gros chiffres pour mobile */
+        .kpi-value {
+            font-size: 1.4rem !important;
+        }
+
+        /* Pour le tableau, on permet le scroll horizontal pour éviter qu'il n'écrase la page */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- KPIs -->
+<div class="kpi-row">
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-icon">💰</div>
+        <p class="kpi-label">Chiffre d'affaires</p>
+        <p class="kpi-value">{{ ca_total|floatformat:0 }}</p>
+        <p class="kpi-sub">FCFA sur {{ periode }} jours</p>
+    </div>
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-icon">🧾</div>
+        <p class="kpi-label">Nombre de ventes</p>
+        <p class="kpi-value">{{ nb_ventes }}</p>
+        <p class="kpi-sub">transactions</p>
+    </div>
+    <div class="kpi-card kpi-green">
+        <div class="kpi-icon">🛒</div>
+        <p class="kpi-label">Panier moyen</p>
+        <p class="kpi-value">{{ panier_moyen|floatformat:0 }}</p>
+        <p class="kpi-sub">FCFA par vente</p>
+    </div>
+</div>
+
+<!-- Graphique + répartition paiement -->
+<div class="chart-row">
+    <div class="card">
+        <div class="card-header"><p class="card-title">Évolution du CA</p></div>
+        <div class="card-body">
+            <div class="chart-box"><canvas id="chartCA"></canvas></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><p class="card-title">Modes de paiement</p></div>
+        <div class="card-body">
+            <div class="chart-box"><canvas id="chartModes"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Top produits + Historique -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><p class="card-title">Top produits vendus</p></div>
+        <div class="card-body" style="padding-top:12px;">
+            {% for p in top %}
+            <div class="stat-bar-row">
+                <span class="stat-bar-label" title="{{ p.produit__nom }}">{{ p.produit__nom|truncatechars:18 }}</span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width:{{ p.ratio|default:0 }}%; background:var(--accent);"></div>
+                </div>
+                <span class="stat-bar-val">{{ p.qty }} u.</span>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding:30px 0;"><p>Aucune vente sur la période.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><p class="card-title">Historique des ventes</p></div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>N°</th><th>Client</th><th>Montant</th><th>Mode</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for v in historique %}
+                    <tr>
+                        <td><a href="{% url 'detail_vente' v.pk %}"><strong>{{ v.numero }}</strong></a></td>
+                        <td>{{ v.client_nom|truncatechars:16 }}</td>
+                        <td>{{ v.total_ttc|floatformat:0 }} F</td>
+                        <td>{{ v.get_mode_paiement_display }}</td>
+                        <td style="font-size:0.78rem; color:var(--text-muted);">{{ v.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Aucune vente.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// CA Chart
+new Chart(document.getElementById('chartCA'), {
+    type: 'line',
+    data: {
+        labels: {{ labels|safe }},
+        datasets: [{
+            label: 'CA (FCFA)',
+            data: {{ ca_jour|safe }},
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245,158,11,0.08)',
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: '#f59e0b',
+            fill: true, tension: 0.4,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', font:{size:11} } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font:{size:11} } }
+        }
+    }
+});
+
+// Modes paiement donut
+const modesLabels = [{% for r in repartition %}"{{ r.mode_paiement }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+const modesData = [{% for r in repartition %}{{ r.total|floatformat:0 }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+new Chart(document.getElementById('chartModes'), {
+    type: 'doughnut',
+    data: {
+        labels: modesLabels.map(m => ({
+            especes:'💵 Espèces', mobile_money:'📱 Mobile Money',
+            carte:'💳 Carte', credit:'📝 Crédit'
+        }[m] || m)),
+        datasets: [{
+            data: modesData,
+            backgroundColor: ['#2563eb','#10b981','#f59e0b','#ef4444'],
+            borderWidth: 0,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font:{size:11}, padding:12 } } },
+        cutout: '62%',
+    }
+});
+</script>
+{% endblock %}

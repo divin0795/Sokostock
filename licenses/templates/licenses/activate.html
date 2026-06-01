@@ -1,0 +1,336 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sokostock | Activation</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+</head>
+
+<body class="auth-body">
+
+<div class="auth-card">
+
+    <!-- LOGO -->
+    <div class="auth-logo">
+        <div class="auth-logo-icon">S</div>
+        <div class="auth-logo-text">
+            Soko<span>stock</span>
+        </div>
+    </div>
+
+    <!-- ALERTES -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="auth-{% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- LICENCE ACTIVE -->
+    {% if user_license and user_license.is_valid %}
+
+        <div style="
+            background:#111827;
+            border:1px solid #1f2937;
+            border-radius:18px;
+            padding:24px;
+            margin-top:10px;
+        ">
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:14px;
+                margin-bottom:24px;
+            ">
+
+                <div style="
+                    width:56px;
+                    height:56px;
+                    border-radius:16px;
+                    background:#22c55e20;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:1.6rem;
+                ">
+                    ✅
+                </div>
+
+                <div>
+                    <h1 class="auth-title" style="margin-bottom:4px;">
+                        Licence active
+                    </h1>
+
+                    <p class="auth-sub" style="margin:0;">
+                        Votre accès Sokostock est opérationnel.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- INFOS -->
+            <div style="
+                display:flex;
+                flex-direction:column;
+                gap:14px;
+            ">
+
+                <div style="
+                    background:#0f172a;
+                    border:1px solid #1e293b;
+                    border-radius:14px;
+                    padding:16px;
+                ">
+
+                    <p style="
+                        color:#64748b;
+                        font-size:0.78rem;
+                        margin-bottom:6px;
+                    ">
+                        Code de licence
+                    </p>
+
+                    <p style="
+                        margin:0;
+                        color:#f8fafc;
+                        font-family:var(--font-mono);
+                        font-size:0.95rem;
+                    ">
+                        {{ user_license.license_key.code }}
+                    </p>
+
+                </div>
+
+                <div style="
+                    background:#0f172a;
+                    border:1px solid #1e293b;
+                    border-radius:14px;
+                    padding:16px;
+                ">
+
+                    <p style="
+                        color:#64748b;
+                        font-size:0.78rem;
+                        margin-bottom:6px;
+                    ">
+                        Expiration
+                    </p>
+
+                    <p style="
+                        margin:0;
+                        color:#f8fafc;
+                    ">
+                        {{ user_license.expiry_date|date:"d/m/Y à H:i" }}
+                    </p>
+
+                </div>
+
+                <div style="
+                    background:#0f172a;
+                    border:1px solid #1e293b;
+                    border-radius:14px;
+                    padding:16px;
+                ">
+
+                    <p style="
+                        color:#64748b;
+                        font-size:0.78rem;
+                        margin-bottom:6px;
+                    ">
+                        Temps restant
+                    </p>
+
+                    <p style="
+                        margin:0;
+                        color:#22c55e;
+                        font-weight:700;
+                        font-size:1rem;
+                    ">
+                        {{ user_license.days_left }} jour{% if user_license.days_left > 1 %}s{% endif %}
+                    </p>
+
+                </div>
+
+            </div>
+
+            {% if user.is_authenticated %}
+                <div class="auth-divider" style="margin:22px 0 16px;">
+                    session
+                </div>
+
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+
+                    <button type="submit"
+                            style="
+                                width:100%;
+                                background:#0f172a;
+                                border:1px solid #1e293b;
+                                color:#94a3b8;
+                                padding:12px;
+                                border-radius:12px;
+                                cursor:pointer;
+                                font-weight:600;
+                            ">
+                        Se déconnecter
+                    </button>
+                </form>
+            {% endif %}
+
+        </div>
+
+    {% else %}
+
+        <!-- PAS DE LICENCE / LICENCE EXPIREE -->
+
+        <div style="text-align:center; margin-bottom:24px;">
+
+            <div style="font-size:2.5rem; margin-bottom:10px;">
+                {% if user_license %}
+                    ⚠️
+                {% else %}
+                    🔑
+                {% endif %}
+            </div>
+
+            <h1 class="auth-title">
+
+                {% if user_license %}
+                    Licence expirée
+                {% else %}
+                    Activer votre accès
+                {% endif %}
+
+            </h1>
+
+            <p class="auth-sub">
+
+                {% if user_license %}
+                    Votre licence a expiré. Activez un nouveau code pour continuer.
+                {% else %}
+                    Saisissez votre code d'activation pour commencer.
+                {% endif %}
+
+            </p>
+
+        </div>
+
+        <!-- FORMULAIRE -->
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="auth-form-group">
+
+                <label class="auth-label" for="license_code">
+                    Code d'activation
+                </label>
+
+                <input class="auth-input"
+                       type="text"
+                       name="license_code"
+                       id="license_code"
+                       placeholder="SOKO-XXXX-XXXX"
+                       required
+                       style="
+                           font-family:var(--font-mono);
+                           letter-spacing:0.05em;
+                           text-transform:uppercase;
+                       "
+                       oninput="this.value = this.value.toUpperCase()">
+
+            </div>
+
+            <button type="submit" class="auth-btn">
+                Activer maintenant ✓
+            </button>
+
+        </form>
+
+        <!-- FOOTER -->
+        <div class="auth-footer" style="margin-top:24px;">
+
+            <p>
+                Besoin d'une licence ?
+            </p>
+
+            <p style="margin-top:8px;">
+                Envoyez <strong>25 000 FCFA</strong> sur MTN Money au
+            </p>
+
+            <p style="
+                margin-top:4px;
+                font-family:var(--font-mono);
+                font-size:1rem;
+                font-weight:700;
+            ">
+                +242 056858555
+            </p>
+
+            <p style="margin-top:8px;">
+                Votre code sera envoyé sur WhatsApp.
+            </p>
+
+            <a href="https://wa.me/242056858555?text=Bonjour%2C%20je%20veux%20activer%20Sokostock"
+               target="_blank"
+               style="
+                   display:inline-block;
+                   margin-top:14px;
+                   background:#25D366;
+                   color:white;
+                   padding:12px 20px;
+                   border-radius:10px;
+                   text-decoration:none;
+                   font-weight:600;
+               ">
+
+                💬 Contacter sur WhatsApp
+
+            </a>
+
+            {% if user.is_authenticated %}
+
+                <div class="auth-divider" style="margin:20px 0;">
+                    ou
+                </div>
+
+                <form action="{% url 'logout' %}" method="post">
+
+                    {% csrf_token %}
+
+                    <button type="submit"
+                            style="
+                                background:none;
+                                border:none;
+                                color:var(--text-3);
+                                font-size:0.82rem;
+                                cursor:pointer;
+                                text-decoration:underline;
+                            ">
+                        Se déconnecter
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

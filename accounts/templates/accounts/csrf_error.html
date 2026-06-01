@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session expirée | Sokostock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+</head>
+<body class="auth-body">
+
+<div class="auth-card">
+    <div class="auth-logo">
+        <div class="auth-logo-icon">S</div>
+        <div class="auth-logo-text">Soko<span>stock</span></div>
+    </div>
+
+    <div style="text-align:center; margin-bottom: 20px;">
+        <div style="font-size: 2.5rem; margin-bottom: 10px;">⚠️</div>
+        <h1 class="auth-title">Session expirée</h1>
+    </div>
+
+    <div class="auth-error" style="text-align:center; margin-bottom: 24px;">
+        Pour votre sécurité, votre session a expiré ou a changé.<br>
+        Veuillez recharger la page et réessayer.
+    </div>
+
+    <a href="/" class="auth-btn" style="display:block; text-align:center;">
+        Retour à l'accueil
+    </a>
+</div>
+
+</body>
+</html>

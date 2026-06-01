@@ -1,0 +1,142 @@
+{% extends 'base_app.html' %}
+{% block title %}Produits{% endblock %}
+{% block page_title %}Produits{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'ajouter_produit' %}" class="btn btn-primary">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Ajouter un produit
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+.product-table td:first-child { font-weight: 600; color: var(--text-primary); }
+.stock-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 100px;
+    font-size: 0.78rem; font-weight: 600;
+}
+.stock-ok { background: var(--success-light); color: #065f46; }
+.stock-low { background: var(--danger-light); color: #991b1b; }
+.stock-zero { background: #f1f5f9; color: #64748b; }
+.cat-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 5px;
+}
+.product-ref { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); }
+.action-btns { display: flex; gap: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filtres -->
+<div class="filters">
+    <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%;">
+        <div class="search-bar" style="flex:1; min-width:200px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom ou référence…">
+        </div>
+        <select name="categorie" class="form-control" style="width:auto;">
+            <option value="">Toutes catégories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if categorie_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nom }}</option>
+            {% endfor %}
+        </select>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-secondary); cursor:pointer;">
+            <input type="checkbox" name="alerte" value="1" {% if request.GET.alerte %}checked{% endif %}> Stock bas seulement
+        </label>
+        <button type="submit" class="btn btn-outline">Filtrer</button>
+        {% if q or categorie_id or request.GET.alerte %}
+        <a href="{% url 'liste_produits' %}" class="btn btn-outline">✕ Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-header">
+        <p class="card-title">
+            {% if produits %}
+                {{ produits|length }} produit{{ produits|length|pluralize }}
+            {% else %}
+                Aucun produit
+            {% endif %}
+        </p>
+        <a href="{% url 'categories' %}" class="btn btn-outline btn-sm">⚙ Gérer catégories</a>
+    </div>
+    <div class="table-wrapper">
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Produit</th>
+                    <th>Catégorie</th>
+                    <th>Prix vente</th>
+                    <th>Prix achat</th>
+                    <th>Marge</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produits %}
+                <tr>
+                    <td>
+                        {{ p.nom }}<br>
+                        {% if p.reference %}<span class="product-ref">{{ p.reference }}</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if p.categorie %}
+                        <span class="cat-dot" style="background:{{ p.categorie.couleur }}"></span>
+                        {{ p.categorie.nom }}
+                        {% else %}
+                        <span style="color:var(--text-muted)">—</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ p.prix_vente|floatformat:0 }} F</strong></td>
+                    <td>{{ p.prix_achat|floatformat:0 }} F</td>
+                    <td>
+                        {% if p.marge > 0 %}
+                        <span class="badge badge-success">+{{ p.marge }}%</span>
+                        {% else %}
+                        <span class="badge badge-neutral">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.stock_actuel == 0 %}
+                            <span class="stock-badge stock-zero">0 {{ p.unite }}</span>
+                        {% elif p.en_alerte %}
+                            <span class="stock-badge stock-low">⚠ {{ p.stock_actuel }} {{ p.unite }}</span>
+                        {% else %}
+                            <span class="stock-badge stock-ok">{{ p.stock_actuel }} {{ p.unite }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{% url 'modifier_produit' p.pk %}" class="btn btn-outline btn-sm btn-icon" title="Modifier">✏</a>
+                            <a href="{% url 'ajuster_stock' p.pk %}" class="btn btn-outline btn-sm btn-icon" title="Ajuster stock">📦</a>
+                            <a href="{% url 'supprimer_produit' p.pk %}" class="btn btn-outline btn-sm btn-icon" title="Supprimer" style="color:var(--danger);">🗑</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📦</div>
+                            <h3>Aucun produit trouvé</h3>
+                            <p>Ajoutez votre premier produit pour commencer.</p>
+                            <br>
+                            <a href="{% url 'ajouter_produit' %}" class="btn btn-primary">+ Ajouter un produit</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

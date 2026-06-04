@@ -177,7 +177,7 @@ def creer_vente(request):
                 client_nom=client_nom or 'Client comptant',
                 client_telephone=client_tel,
                 mode_paiement=mode_paiement,
-                statut='credit' if mode_paiement == 'credit' else 'completee',
+                statut='completee',  # Toujours complétée — le crédit est géré par Dette, pas par statut
                 remise=remise_pct,
                 total_ht=total_ht,
                 total_ttc=total_ttc,

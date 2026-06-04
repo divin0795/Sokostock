@@ -4,7 +4,10 @@
 
 {% block topbar_actions %}
 <button class="btn btn-accent" onclick="document.getElementById('modal-ajout').style.display='flex'">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
     Nouveau client
 </button>
 {% endblock %}
@@ -36,27 +39,50 @@
                 <tbody>
                 {% for c in clients %}
                 <tr>
-                    <td><a href="{% url 'detail_client' c.pk %}" style="font-weight:600;color:var(--primary);text-decoration:none;">{{ c.nom }}</a></td>
+                    <td>
+                        <a href="{% url 'detail_client' c.pk %}"
+                           style="font-weight:600;color:var(--primary);text-decoration:none;">
+                            {{ c.nom }}
+                        </a>
+                    </td>
+
                     <td>{{ c.telephone|default:"—" }}</td>
-                    <td>{{ c.nb_achats }}</td>
+
+                    <!-- FIX: montant réel des achats -->
+                    <td>
+                        {{ c.total_achats|default:0|floatformat:0 }} FCFA
+                    </td>
+
                     <td>
                         {% if c.solde_dette > 0 %}
-                            <span class="badge badge-danger">{{ c.solde_dette|floatformat:0 }} FCFA</span>
+                            <span class="badge badge-danger">
+                                {{ c.solde_dette|floatformat:0 }} FCFA
+                            </span>
                         {% else %}
                             <span class="badge badge-success">Soldé</span>
                         {% endif %}
                     </td>
+
                     <td>
                         <a href="{% url 'detail_client' c.pk %}" class="btn btn-sm btn-secondary">Voir</a>
+
                         <form action="{% url 'supprimer_client' c.pk %}" method="post" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);"
-                                onclick="return confirm('Supprimer ce client ?')">Supprimer</button>
+                            <button type="submit"
+                                    class="btn btn-sm"
+                                    style="background:var(--danger-light);color:var(--danger);"
+                                    onclick="return confirm('Supprimer ce client ?')">
+                                Supprimer
+                            </button>
                         </form>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">Aucun client enregistré</td></tr>
+                <tr>
+                    <td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">
+                        Aucun client enregistré
+                    </td>
+                </tr>
                 {% endfor %}
                 </tbody>
             </table>
@@ -65,30 +91,40 @@
 </div>
 
 <!-- Modal ajout client -->
-<div id="modal-ajout" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;">
+<div id="modal-ajout"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;">
     <div class="card" style="width:100%;max-width:480px;padding:28px;">
         <h3 style="margin-bottom:20px;font-size:1.1rem;font-weight:700;">Nouveau client</h3>
+
         <form action="{% url 'ajouter_client' %}" method="post">
             {% csrf_token %}
+
             <div class="form-group">
                 <label class="form-label">Nom *</label>
                 <input type="text" name="nom" class="form-control" required placeholder="Ex: Jean Makaya">
             </div>
+
             <div class="form-group">
                 <label class="form-label">Téléphone</label>
                 <input type="text" name="telephone" class="form-control" placeholder="+242 06 ...">
             </div>
+
             <div class="form-group">
                 <label class="form-label">Adresse</label>
                 <input type="text" name="adresse" class="form-control" placeholder="Quartier, ville">
             </div>
+
             <div class="form-group">
                 <label class="form-label">Note</label>
                 <textarea name="note" class="form-control" rows="2" placeholder="Informations utiles..."></textarea>
             </div>
+
             <div style="display:flex;gap:10px;margin-top:20px;">
                 <button type="submit" class="btn btn-accent" style="flex:1;">Enregistrer</button>
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-ajout').style.display='none'">Annuler</button>
+                <button type="button" class="btn btn-secondary"
+                        onclick="document.getElementById('modal-ajout').style.display='none'">
+                    Annuler
+                </button>
             </div>
         </form>
     </div>

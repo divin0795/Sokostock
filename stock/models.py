@@ -97,7 +97,8 @@ class Vente(models.Model):
     STATUTS = [
         ('completee', 'Complétée'),
         ('annulee', 'Annulée'),
-        ('credit', 'À crédit'),
+        # Pas de statut 'credit' — le crédit est représenté par un objet Dette,
+        # pas par le statut de la vente. Toute vente est 'completee' dès sa création.
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ventes')

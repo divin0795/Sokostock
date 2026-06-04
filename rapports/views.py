@@ -9,7 +9,10 @@ from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
 import json
+
 from stock.models import Produit, Vente, LigneVente, MouvementStock
+from clients.models import Dette
+
 
 @login_required
 def dashboard(request):
@@ -17,8 +20,9 @@ def dashboard(request):
     today = timezone.now().date()
     debut_mois = today.replace(day=1)
 
-    # ── Produits stats ────────────────────────────────────────────────────────
+    # ── Produits stats ─────────────────────────────────────────────
     produits_qs = Produit.objects.filter(user=user, actif=True)
+
     produits_stats = produits_qs.aggregate(
         total=Count('id'),
         ruptures=Count('id', filter=Q(stock_actuel=0)),
@@ -29,6 +33,7 @@ def dashboard(request):
     alertes_qs = produits_qs.filter(
         stock_actuel__lte=F('stock_minimum')
     ).only('id', 'nom', 'stock_actuel', 'stock_minimum').order_by('stock_actuel')
+
     nb_alertes = alertes_qs.count()
     alertes = alertes_qs[:3]
 
@@ -44,11 +49,12 @@ def dashboard(request):
         )
     )['total']
 
-    # ── Ventes jour & mois ────────────────────────────────────────────────────
+    # ── VENTES (CA = montant_recu) ────────────────────────────────
+
     ventes_jour_agg = Vente.objects.filter(
         user=user, statut='completee', created_at__date=today
     ).aggregate(
-        total=Coalesce(Sum('total_ttc'), Decimal('0')),
+        total=Coalesce(Sum('montant_recu'), Decimal('0')),
         nb=Count('id'),
     )
     ventes_jour = ventes_jour_agg['total']
@@ -57,7 +63,7 @@ def dashboard(request):
     ventes_mois_agg = Vente.objects.filter(
         user=user, statut='completee', created_at__date__gte=debut_mois
     ).aggregate(
-        total=Coalesce(Sum('total_ttc'), Decimal('0')),
+        total=Coalesce(Sum('montant_recu'), Decimal('0')),
         nb=Count('id'),
     )
     ventes_mois = ventes_mois_agg['total']
@@ -65,11 +71,7 @@ def dashboard(request):
 
     panier_moyen = ventes_mois / nb_ventes_mois if nb_ventes_mois > 0 else Decimal('0')
 
-    # ── Ventes à crédit jour & mois ──────────────────────────────────────────
-    # On filtre sur mode_paiement='credit' — le statut est toujours 'completee'.
-    # Ces ventes sont déjà incluses dans ventes_jour/ventes_mois (CA global).
-    # On les isole ici pour informer sur la part vendue à crédit.
-    from clients.models import Dette
+    # ── CRÉDIT ────────────────────────────────────────────────────
     credit_jour_agg = Vente.objects.filter(
         user=user, statut='completee', mode_paiement='credit', created_at__date=today
     ).aggregate(
@@ -88,14 +90,13 @@ def dashboard(request):
     credit_mois = credit_mois_agg['total']
     nb_credit_mois = credit_mois_agg['nb']
 
-    # Montant total encore dû sur toutes les dettes actives
     dettes_en_cours = Dette.objects.filter(
         client__user=user, remboursee=False
     ).aggregate(
         total=Coalesce(Sum('montant_restant'), Decimal('0'))
     )['total']
-    
-    # ── Bénéfice du jour ──────────────────────────────────────────────────────
+
+    # ── BÉNÉFICE JOUR ──────────────────────────────────────────────
     benefice_jour = LigneVente.objects.filter(
         vente__user=user,
         vente__statut='completee',
@@ -112,15 +113,20 @@ def dashboard(request):
         )
     )['total']
 
-    # ── Graphique 7 jours ─────────────────────────────────────────────────────
+    # ── GRAPHIQUE 7 JOURS (CA encaissé) ───────────────────────────
     debut_7j = today - timedelta(days=6)
+
     ventes_7j_qs = (
         Vente.objects
         .filter(user=user, statut='completee', created_at__date__gte=debut_7j)
         .values('created_at__date')
-        .annotate(total=Sum('total_ttc'))
+        .annotate(total=Sum('montant_recu'))
     )
-    totaux_par_jour = {v['created_at__date']: float(v['total'] or 0) for v in ventes_7j_qs}
+
+    totaux_par_jour = {
+        v['created_at__date']: float(v['total'] or 0)
+        for v in ventes_7j_qs
+    }
 
     labels, data_ventes = [], []
     for i in range(6, -1, -1):
@@ -128,7 +134,7 @@ def dashboard(request):
         labels.append(d.strftime('%d/%m'))
         data_ventes.append(totaux_par_jour.get(d, 0))
 
-    # ── Top produits du mois ──────────────────────────────────────────────────
+    # ── TOP PRODUITS ──────────────────────────────────────────────
     top_produits = list(
         LigneVente.objects
         .filter(
@@ -140,12 +146,13 @@ def dashboard(request):
         .annotate(qty=Sum('quantite'), ca=Sum('sous_total'))
         .order_by('-ca')[:5]
     )
+
     if top_produits:
         max_ca = float(max(p['ca'] or 0 for p in top_produits) or 1)
         for p in top_produits:
             p['ratio'] = round(float(p['ca'] or 0) / max_ca * 100, 1)
 
-    # ── Dernières ventes & mouvements ─────────────────────────────────────────
+    # ── HISTORIQUE ────────────────────────────────────────────────
     dernieres_ventes = (
         Vente.objects
         .filter(user=user, statut='completee')
@@ -182,8 +189,9 @@ def dashboard(request):
         'credit_mois': credit_mois,
         'nb_credit_jour': nb_credit_jour,
         'nb_credit_mois': nb_credit_mois,
-        'dettes_en_cours': dettes_en_cours,  # Total restant dû toutes dettes actives
+        'dettes_en_cours': dettes_en_cours,
     }
+
     return render(request, 'stock/dashboard.html', context)
 
 
@@ -200,21 +208,27 @@ def rapports(request):
         nb_jours = 30
 
     debut = today - timedelta(days=nb_jours - 1)
-    ventes = Vente.objects.filter(user=user, statut='completee', created_at__date__gte=debut)
+
+    ventes = Vente.objects.filter(
+        user=user,
+        statut='completee',
+        created_at__date__gte=debut
+    )
 
     agg = ventes.aggregate(
-        ca=Coalesce(Sum('total_ttc'), Decimal('0')),
+        ca=Coalesce(Sum('montant_recu'), Decimal('0')),
         nb=Count('id'),
     )
+
     ca_total = agg['ca']
     nb_ventes = agg['nb']
     panier_moyen = ca_total / nb_ventes if nb_ventes > 0 else Decimal('0')
 
-    # Graphique
     ventes_par_jour = {
         v['created_at__date']: float(v['s'] or 0)
-        for v in ventes.values('created_at__date').annotate(s=Sum('total_ttc'))
+        for v in ventes.values('created_at__date').annotate(s=Sum('montant_recu'))
     }
+
     labels, ca_jour = [], []
     for i in range(nb_jours - 1, -1, -1):
         d = today - timedelta(days=i)
@@ -228,13 +242,15 @@ def rapports(request):
         .annotate(qty=Sum('quantite'), ca=Sum('sous_total'))
         .order_by('-ca')[:10]
     )
+
     if top:
         max_qty = max((p['qty'] or 0) for p in top) or 1
         for p in top:
             p['ratio'] = round((p['qty'] or 0) / max_qty * 100, 1)
 
     repartition = ventes.values('mode_paiement').annotate(
-        total=Sum('total_ttc'), nb=Count('id')
+        total=Sum('montant_recu'),
+        nb=Count('id')
     ).order_by('-total')
 
     historique = ventes.order_by('-created_at')[:20]
@@ -251,4 +267,5 @@ def rapports(request):
         'historique': historique,
         'periods': [('7', '7 jours'), ('30', '30 jours'), ('90', '90 jours'), ('365', '1 an')],
     }
+
     return render(request, 'stock/rapports.html', context)

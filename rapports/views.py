@@ -65,9 +65,13 @@ def dashboard(request):
 
     panier_moyen = ventes_mois / nb_ventes_mois if nb_ventes_mois > 0 else Decimal('0')
 
-    # ── CA à crédit jour & mois ───────────────────────────────────────────────
+    # ── Ventes à crédit jour & mois ──────────────────────────────────────────
+    # On filtre sur mode_paiement='credit' — le statut est toujours 'completee'.
+    # Ces ventes sont déjà incluses dans ventes_jour/ventes_mois (CA global).
+    # On les isole ici pour informer sur la part vendue à crédit.
+    from clients.models import Dette
     credit_jour_agg = Vente.objects.filter(
-        user=user, statut='credit', created_at__date=today
+        user=user, statut='completee', mode_paiement='credit', created_at__date=today
     ).aggregate(
         total=Coalesce(Sum('total_ttc'), Decimal('0')),
         nb=Count('id'),
@@ -76,13 +80,20 @@ def dashboard(request):
     nb_credit_jour = credit_jour_agg['nb']
 
     credit_mois_agg = Vente.objects.filter(
-        user=user, statut='credit', created_at__date__gte=debut_mois
+        user=user, statut='completee', mode_paiement='credit', created_at__date__gte=debut_mois
     ).aggregate(
         total=Coalesce(Sum('total_ttc'), Decimal('0')),
         nb=Count('id'),
     )
     credit_mois = credit_mois_agg['total']
     nb_credit_mois = credit_mois_agg['nb']
+
+    # Montant total encore dû sur toutes les dettes actives
+    dettes_en_cours = Dette.objects.filter(
+        client__user=user, remboursee=False
+    ).aggregate(
+        total=Coalesce(Sum('montant_restant'), Decimal('0'))
+    )['total']
     
     # ── Bénéfice du jour ──────────────────────────────────────────────────────
     benefice_jour = LigneVente.objects.filter(
@@ -171,6 +182,7 @@ def dashboard(request):
         'credit_mois': credit_mois,
         'nb_credit_jour': nb_credit_jour,
         'nb_credit_mois': nb_credit_mois,
+        'dettes_en_cours': dettes_en_cours,  # Total restant dû toutes dettes actives
     }
     return render(request, 'stock/dashboard.html', context)
 

@@ -54,10 +54,10 @@ def ajouter_client(request):
 def detail_client(request, pk):
     client = get_object_or_404(Client, pk=pk, user=request.user)
 
-    # FIX: inclure les ventes à crédit sinon achats = 0
+    # Toutes les ventes non-annulées (le crédit est géré par Dette, pas par statut)
     ventes = (
         client.ventes_liees
-        .filter(statut__in=['completee', 'credit'])
+        .exclude(statut='annulee')
         .order_by('-created_at')[:20]
     )
 
@@ -188,6 +188,14 @@ def enregistrer_paiement(request, pk):
             note=request.POST.get('note', '').strip(),
             created_by=request.user,
         )
+
+        # Intégration au CA : on met à jour montant_recu sur la vente liée
+        # afin que les calculs de CA incluent les encaissements de dettes.
+        if dette.vente_id:
+            from stock.models import Vente
+            Vente.objects.filter(pk=dette.vente_id).update(
+                montant_recu=F('montant_recu') + montant
+            )
 
     messages.success(request, f'Paiement de {montant:,.0f} FCFA enregistré.')
     return redirect('liste_dettes')

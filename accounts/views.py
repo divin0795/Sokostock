@@ -20,13 +20,15 @@ def post_login_redirect(request):
     if not request.user.is_authenticated:
         return redirect('login')
 
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect('dashboard')
+
     try:
         user_license = UserLicense.objects.get(user=request.user)
-
         if user_license.is_active and user_license.expiry_date > timezone.now():
-            return redirect('/dashboard/')
+            return redirect('dashboard')
 
     except UserLicense.DoesNotExist:
         pass
 
-    return redirect('/activate-license/')
+    return redirect('activate-license')

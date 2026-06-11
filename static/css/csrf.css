@@ -1,0 +1,70 @@
+:root {
+    --primary: #2563eb;
+    --success: #16a34a;
+    --text: #1f2937;
+    --bg: #ffffff;
+    --border: #e5e7eb;
+    --error-bg: #fee2e2;
+    --error-text: #b91c1c;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text);
+    background-color: var(--bg);
+    margin: 0;
+    padding: 20px;
+}
+
+/* HEADER */
+header h1 {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-top: 40px;
+    color: var(--text);
+}
+
+header h1 span {
+    color: var(--primary);
+}
+
+/* CONTAINER */
+main {
+    max-width: 420px;
+    margin: 80px auto;
+    text-align: center;
+}
+
+/* TITRE */
+h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+/* MESSAGE */
+.message-box {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+}
+
+/* BOUTON / LINK */
+a.button {
+    display: inline-block;
+    background-color: var(--primary);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+a.button:hover {
+    background-color: #1d4ed8;
+}

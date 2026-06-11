@@ -1,0 +1,71 @@
+{% extends 'base_app.html' %}
+{% block title %}Fournisseurs{% endblock %}
+{% block page_title %}Fournisseurs{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'creer_commande' %}" class="btn btn-outline">📦 Nouvelle commande</a>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+
+  <!-- Formulaire ajout -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header"><p class="card-title">Nouveau fournisseur</p></div>
+    <div class="card-body">
+      <form method="post" action="{% url 'ajouter_fournisseur' %}" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;">
+        {% csrf_token %}
+        <div>
+          <label style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;display:block;">Nom *</label>
+          <input type="text" name="nom" class="form-control" placeholder="Nom du fournisseur" required>
+        </div>
+        <div>
+          <label style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;display:block;">Téléphone</label>
+          <input type="text" name="telephone" class="form-control" placeholder="+242...">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Recherche -->
+  <form method="get" style="margin-bottom:16px;">
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher un fournisseur...">
+    </div>
+  </form>
+
+  <!-- Liste -->
+  <div class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Nom</th><th>Téléphone</th><th>Commandes</th><th>Total achats</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for f in fournisseurs %}
+          <tr>
+            <td><a href="{% url 'detail_fournisseur' f.pk %}" style="color:var(--primary);font-weight:600;">{{ f.nom }}</a></td>
+            <td>{{ f.telephone|default:"—" }}</td>
+            <td>{{ f.nb_commandes }}</td>
+            <td>{{ f.total_commandes|floatformat:0 }} FCFA</td>
+            <td style="display:flex;gap:6px;">
+              <a href="{% url 'detail_fournisseur' f.pk %}" class="btn btn-sm btn-outline">Voir</a>
+              <form method="post" action="{% url 'supprimer_fournisseur' f.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer ce fournisseur ?')">Supprimer</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Aucun fournisseur</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

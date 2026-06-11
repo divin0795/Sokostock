@@ -1,0 +1,149 @@
+{% extends 'base_app.html' %}
+{% block title %}{{ titre }}{% endblock %}
+{% block page_title %}{{ titre }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'liste_produits' %}" class="btn btn-outline">← Retour aux produits</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-card { max-width: 760px; }
+.section-sep {
+    border: none; border-top: 1px dashed var(--border);
+    margin: 24px 0; 
+}
+.section-heading {
+    font-size: 0.78rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); margin-bottom: 18px;
+}
+.preview-marge {
+    background: var(--primary-light);
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    margin-top: 10px;
+    font-size: 0.875rem; color: var(--primary);
+    display: flex; gap: 24px;
+}
+.preview-marge strong { font-size: 1.1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card card">
+    <div class="card-header">
+        <p class="card-title">{{ titre }}</p>
+        {% if produit %}
+        <span class="badge badge-info">Modif. {{ produit.updated_at|date:"d/m/Y" }}</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Infos générales -->
+            <p class="section-heading">Informations générales</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Nom du produit *</label>
+                    {{ form.nom }}
+                    {% for e in form.nom.errors %}<p style="color:var(--danger);font-size:0.8rem;margin-top:4px;">{{ e }}</p>{% endfor %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Référence / Code</label>
+                    {{ form.reference }}
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Catégorie</label>
+                    {{ form.categorie }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unité de vente</label>
+                    {{ form.unite }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                {{ form.description }}
+            </div>
+
+            <hr class="section-sep">
+
+            <!-- Prix -->
+            <p class="section-heading">Tarification</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Prix d'achat (FCFA) *</label>
+                    {{ form.prix_achat }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prix de vente (FCFA) *</label>
+                    {{ form.prix_vente }}
+                </div>
+            </div>
+
+            <div class="preview-marge" id="preview" style="display:none;">
+                <span>Marge brute : <strong id="marge-val">—</strong></span>
+                <span>Bénéfice / unité : <strong id="benef-val">—</strong></span>
+            </div>
+
+            <hr class="section-sep">
+
+            <!-- Stock -->
+            <p class="section-heading">Gestion du stock</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Stock actuel</label>
+                    {{ form.stock_actuel }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Seuil d'alerte (stock minimum)</label>
+                    {{ form.stock_minimum }}
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:8px;">
+                <button type="submit" class="btn btn-primary">
+                    {% if produit %}💾 Enregistrer les modifications{% else %}➕ Ajouter le produit{% endif %}
+                </button>
+                <a href="{% url 'liste_produits' %}" class="btn btn-outline">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const achat = document.querySelector('[name="prix_achat"]');
+const vente = document.querySelector('[name="prix_vente"]');
+const preview = document.getElementById('preview');
+const margeVal = document.getElementById('marge-val');
+const benefVal = document.getElementById('benef-val');
+
+function calc() {
+    const a = parseFloat(achat.value) || 0;
+    const v = parseFloat(vente.value) || 0;
+    if (a > 0 && v > 0) {
+        const marge = ((v - a) / a * 100).toFixed(1);
+        const benef = (v - a).toLocaleString('fr-FR');
+        margeVal.textContent = marge + '%';
+        benefVal.textContent = benef + ' FCFA';
+        preview.style.display = 'flex';
+        preview.style.background = marge >= 0 ? '' : 'var(--danger-light)';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+achat.addEventListener('input', calc);
+vente.addEventListener('input', calc);
+calc();
+</script>
+{% endblock %}

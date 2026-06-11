@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sokostock | Créer un compte</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+</head>
+
+<body class="auth-body">
+
+<div class="auth-card" style="max-width:480px;">
+
+    <div class="auth-logo">
+        <div class="auth-logo-icon">S</div>
+        <div class="auth-logo-text">Soko<span>stock</span></div>
+    </div>
+
+    <h1 class="auth-title">Créer votre boutique</h1>
+    <p class="auth-sub">
+        Configurez votre espace en quelques secondes.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="auth-form-group">
+
+            {% if field.field.widget.input_type == 'checkbox' %}
+
+                <div style="display:flex; align-items:center; gap:10px;">
+
+                    {{ field }}
+
+                    <label class="auth-label"
+                           for="{{ field.id_for_label }}"
+                           style="margin:0;">
+                        {{ field.label }}
+                    </label>
+
+                </div>
+
+            {% else %}
+
+                <label class="auth-label"
+                       for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                <input
+                    class="auth-input"
+                    type="{{ field.field.widget.input_type }}"
+                    name="{{ field.html_name }}"
+                    id="{{ field.id_for_label }}"
+                    value="{{ field.value|default:'' }}"
+                    placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}"
+                    {% if field.field.required %}required{% endif %}
+                >
+
+            {% endif %}
+
+            {% if field.help_text %}
+            <p style="font-size:0.72rem; color:var(--text-3); margin-top:3px;">
+                {{ field.help_text|safe }}
+            </p>
+            {% endif %}
+
+            {% for error in field.errors %}
+            <p style="font-size:0.75rem; color:var(--danger); margin-top:3px;">
+                {{ error }}
+            </p>
+            {% endfor %}
+
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="auth-btn">
+            Créer ma boutique 🚀
+        </button>
+    </form>
+
+    <div class="auth-footer" style="margin-top:16px;">
+        Déjà commerçant ?
+        <a href="{% url 'login' %}">
+            Se connecter
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>

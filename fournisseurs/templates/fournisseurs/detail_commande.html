@@ -1,0 +1,67 @@
+{% extends 'base_app.html' %}
+{% block title %}Commande {{ commande.numero }}{% endblock %}
+{% block page_title %}Commande {{ commande.numero }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'liste_commandes' %}" class="btn btn-outline">← Retour</a>
+{% if commande.statut == 'en_attente' or commande.statut == 'partielle' %}
+<form method="post" action="{% url 'recevoir_commande' commande.pk %}" style="display:inline;">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmer la réception ? Le stock sera mis à jour.')">✅ Marquer reçue</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:24px;">
+    <div class="card" style="padding:20px;">
+      <p style="font-size:0.75rem;color:var(--text-muted);">FOURNISSEUR</p>
+      <p style="font-weight:700;margin-top:4px;">{{ commande.fournisseur.nom }}</p>
+      <p style="font-size:0.82rem;color:var(--text-muted);">{{ commande.fournisseur.telephone }}</p>
+    </div>
+    <div class="card" style="padding:20px;">
+      <p style="font-size:0.75rem;color:var(--text-muted);">DATE</p>
+      <p style="font-weight:700;margin-top:4px;">{{ commande.date_commande|date:"d/m/Y" }}</p>
+      {% if commande.date_livraison_prevue %}
+      <p style="font-size:0.82rem;color:var(--text-muted);">Livraison : {{ commande.date_livraison_prevue|date:"d/m/Y" }}</p>
+      {% endif %}
+    </div>
+    <div class="card" style="padding:20px;">
+      <p style="font-size:0.75rem;color:var(--text-muted);">STATUT</p>
+      <span class="badge {% if commande.statut == 'recue' %}badge-success{% elif commande.statut == 'annulee' %}badge-danger{% else %}badge-warning{% endif %}" style="margin-top:4px;">
+        {{ commande.get_statut_display }}
+      </span>
+    </div>
+    <div class="card" style="padding:20px;">
+      <p style="font-size:0.75rem;color:var(--text-muted);">MONTANT TOTAL</p>
+      <p style="font-weight:800;font-size:1.2rem;color:var(--primary);margin-top:4px;">{{ commande.montant_total|floatformat:0 }} FCFA</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;">Produits commandés</div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Produit</th><th>Qté commandée</th><th>Qté reçue</th><th>Prix unitaire</th><th>Sous-total</th></tr></thead>
+        <tbody>
+          {% for l in lignes %}
+          <tr>
+            <td><strong>{{ l.produit.nom }}</strong></td>
+            <td>{{ l.quantite_commandee }}</td>
+            <td>{{ l.quantite_recue }}</td>
+            <td>{{ l.prix_unitaire|floatformat:0 }} FCFA</td>
+            <td><strong>{{ l.sous_total|floatformat:0 }} FCFA</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if commande.note %}
+  <div class="card" style="margin-top:16px;padding:16px 20px;">
+    <strong>Note :</strong> {{ commande.note }}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

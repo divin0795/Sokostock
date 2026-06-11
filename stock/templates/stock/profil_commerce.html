@@ -1,0 +1,69 @@
+{% extends 'base_app.html' %}
+{% block title %}Profil du commerce{% endblock %}
+{% block page_title %}Mon Commerce{% endblock %}
+
+{% block content %}
+<div style="padding:24px;max-width:700px;">
+    <div class="card" style="padding:28px;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:6px;">Paramètres du commerce</h3>
+        <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:24px;">
+            Ces informations apparaissent sur vos tickets de caisse et rapports. Adaptez-les à votre activité.
+        </p>
+
+        <form action="{% url 'profil_commerce' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label class="form-label">Nom du commerce *</label>
+                    {{ form.name }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type d'activité</label>
+                    {{ form.type_commerce }}
+                    <small style="color:var(--text-muted);">Adapte le vocabulaire de l'app à votre secteur</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Devise</label>
+                    {{ form.devise }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Téléphone</label>
+                    {{ form.phone }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label class="form-label">Adresse</label>
+                    {{ form.address }}
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label class="form-label">Slogan / Message de bas de ticket</label>
+                    {{ form.slogan }}
+                    <small style="color:var(--text-muted);">Ex : « Merci pour votre confiance ! Revenez nous voir. »</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Taux TVA (%)</label>
+                    {{ form.tva_taux }}
+                    <small style="color:var(--text-muted);">Laissez 0 si vous ne facturez pas la TVA</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Logo (optionnel)</label>
+                    {{ form.logo }}
+                    {% if commerce.logo %}
+                    <div style="margin-top:8px;">
+                        <img src="{{ commerce.logo.url }}" alt="Logo" style="height:60px;border-radius:8px;border:1px solid var(--border);">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+                <button type="submit" class="btn btn-accent">💾 Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

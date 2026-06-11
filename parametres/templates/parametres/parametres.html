@@ -1,0 +1,223 @@
+{% extends 'base_app.html' %}
+{% block title %}Paramètres{% endblock %}
+{% block page_title %}Paramètres{% endblock %}
+
+{% block extra_css %}
+<style>
+.param-section { margin-bottom:28px; }
+.param-section h3 { font-size:0.85rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.param-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.color-preview { width:36px; height:36px; border-radius:8px; border:2px solid var(--border); cursor:pointer; }
+.theme-btn { padding:12px 20px; border:2px solid var(--border); border-radius:var(--radius); cursor:pointer; font-weight:600; background:var(--surface); font-family:var(--font); transition:all var(--t); display:flex; align-items:center; gap:8px; }
+.theme-btn.active { border-color:var(--primary); background:var(--primary-lt); color:var(--primary); }
+@media(max-width:768px){ .param-grid { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px; max-width:800px; margin:0 auto;">
+
+  {% if messages %}
+  {% for m in messages %}
+  <div class="alert alert-{{ m.tags }}" style="margin-bottom:16px;">{{ m }} <button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;cursor:pointer;">×</button></div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post" action="{% url 'save_parametres' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- COMMERCE -->
+    <div class="card param-section">
+      <div class="card-header"><p class="card-title">🏪 Mon commerce</p></div>
+      <div class="card-body">
+        <div class="param-grid">
+          <div>
+            <label class="form-label">Nom du commerce *</label>
+            <input type="text" name="name" class="form-control" value="{{ commerce.name|default:'' }}" required placeholder="Ex: Boutique Mama Céleste">
+          </div>
+          <div>
+            <label class="form-label">Type d'activité</label>
+            <select name="type_commerce" class="form-control">
+              {% for val, label in form.fields.type_commerce.choices %}
+              <option value="{{ val }}" {% if commerce.type_commerce == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Téléphone</label>
+            <input type="text" name="phone" class="form-control" value="{{ commerce.phone|default:'' }}" placeholder="+242 06...">
+          </div>
+          <div>
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ commerce.email|default:'' }}" placeholder="boutique@email.com">
+          </div>
+          <div style="grid-column:1/-1;">
+            <label class="form-label">Adresse</label>
+            <input type="text" name="address" class="form-control" value="{{ commerce.address|default:'' }}" placeholder="Quartier, rue, ville...">
+          </div>
+          <div>
+            <label class="form-label">Slogan / Message ticket</label>
+            <input type="text" name="slogan" class="form-control" value="{{ commerce.slogan|default:'' }}" placeholder="Merci pour votre confiance !">
+          </div>
+          <div>
+            <label class="form-label">Devise</label>
+            <select name="devise" class="form-control">
+              {% for val, label in form.fields.devise.choices %}
+              <option value="{{ val }}" {% if commerce.devise == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Taux TVA (%)</label>
+            <input type="number" name="tva_taux" class="form-control" value="{{ commerce.tva_taux|default:'0' }}" min="0" max="100" step="0.01" placeholder="0">
+          </div>
+          <div>
+            <label class="form-label">Logo (optionnel)</label>
+            <input type="file" name="logo" class="form-control" accept="image/*">
+            {% if commerce.logo %}<p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Logo actuel : {{ commerce.logo.name }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPARENCE -->
+    <div class="card param-section">
+      <div class="card-header"><p class="card-title">🎨 Apparence</p></div>
+      <div class="card-body">
+        <div class="param-section">
+          <h3>Thème</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button type="button" class="theme-btn active" id="theme-light" onclick="setTheme('light')">☀️ Clair</button>
+            <button type="button" class="theme-btn" id="theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
+          </div>
+        </div>
+
+        <div class="param-section" style="margin-top:20px;">
+          <h3>Couleur principale</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            {% for color, label in colors %}
+            <label style="cursor:pointer;text-align:center;">
+              <input type="radio" name="primary_color" value="{{ color }}" style="display:none;" {% if selected_color == color %}checked{% endif %} onchange="applyColor('{{ color }}')">
+              <div class="color-preview" style="background:{{ color }};" title="{{ label }}" onclick="applyColor('{{ color }}');this.previousElementSibling.checked=true;"></div>
+              <span style="font-size:0.7rem;color:var(--text-muted);display:block;margin-top:3px;">{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="param-section" style="margin-top:20px;">
+          <h3>Taille de police</h3>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <button type="button" class="theme-btn" onclick="setFontSize('small')">A<small>petit</small></button>
+            <button type="button" class="theme-btn active" onclick="setFontSize('normal')">A normal</button>
+            <button type="button" class="theme-btn" onclick="setFontSize('large')">A <big>grand</big></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS -->
+    <div class="card param-section">
+      <div class="card-header"><p class="card-title">🖥️ Caisse (POS)</p></div>
+      <div class="card-body">
+        <div class="param-grid">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface-2);border-radius:var(--radius-sm);">
+            <div>
+              <p style="font-weight:600;">Afficher le stock sur les produits</p>
+              <p style="font-size:0.8rem;color:var(--text-muted);">Montrer la quantité restante au POS</p>
+            </div>
+            <label style="cursor:pointer;">
+              <input type="checkbox" id="show-stock" style="width:18px;height:18px;" checked onchange="savePref('show_stock', this.checked)">
+            </label>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface-2);border-radius:var(--radius-sm);">
+            <div>
+              <p style="font-weight:600;">Son à la validation</p>
+              <p style="font-size:0.8rem;color:var(--text-muted);">Bip sonore après chaque vente</p>
+            </div>
+            <label style="cursor:pointer;">
+              <input type="checkbox" id="sound-enabled" style="width:18px;height:18px;" onchange="savePref('sound_enabled', this.checked)">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem;">💾 Sauvegarder les paramètres commerce</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Thème ─────────────────────────────────────────────────────
+const root = document.documentElement;
+
+function setTheme(theme) {
+  localStorage.setItem('soko_theme', theme);
+  applyTheme(theme);
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`theme-${theme}`)?.classList.add('active');
+}
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    root.style.setProperty('--bg', '#0f172a');
+    root.style.setProperty('--surface', '#1e293b');
+    root.style.setProperty('--surface-2', '#263248');
+    root.style.setProperty('--border', '#334155');
+    root.style.setProperty('--text-primary', '#f1f5f9');
+    root.style.setProperty('--text-muted', '#94a3b8');
+  } else {
+    root.style.removeProperty('--bg');
+    root.style.removeProperty('--surface');
+    root.style.removeProperty('--surface-2');
+    root.style.removeProperty('--border');
+    root.style.removeProperty('--text-primary');
+    root.style.removeProperty('--text-muted');
+  }
+}
+
+// ── Couleur principale ────────────────────────────────────────
+function applyColor(color) {
+  root.style.setProperty('--primary', color);
+  // Calculer une version light de la couleur
+  root.style.setProperty('--primary-light', color + '20');
+  localStorage.setItem('soko_color', color);
+}
+
+// ── Taille de police ─────────────────────────────────────────
+function setFontSize(size) {
+  const sizes = { small: '13px', normal: '15px', large: '17px' };
+  root.style.fontSize = sizes[size] || '15px';
+  localStorage.setItem('soko_fontsize', size);
+}
+
+// ── Préférences POS ───────────────────────────────────────────
+function savePref(key, value) {
+  localStorage.setItem(`soko_${key}`, value);
+}
+
+// ── Restaurer au chargement ───────────────────────────────────
+(function init() {
+  const theme = localStorage.getItem('soko_theme') || 'light';
+  applyTheme(theme);
+  document.getElementById(`theme-${theme}`)?.classList.add('active');
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    if (!b.id.includes(theme)) b.classList.remove('active');
+  });
+
+  const color = localStorage.getItem('soko_color');
+  if (color) applyColor(color);
+
+  const size = localStorage.getItem('soko_fontsize') || 'normal';
+  setFontSize(size);
+
+  const showStock = localStorage.getItem('soko_show_stock');
+  if (showStock === 'false') document.getElementById('show-stock').checked = false;
+
+  const sound = localStorage.getItem('soko_sound_enabled');
+  if (sound === 'true') document.getElementById('sound-enabled').checked = true;
+})();
+</script>
+{% endblock %}

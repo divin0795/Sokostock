@@ -1,0 +1,37 @@
+{% extends 'base_app.html' %}
+{% block title %}Commandes fournisseurs{% endblock %}
+{% block page_title %}Commandes fournisseurs{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'creer_commande' %}" class="btn btn-primary">+ Nouvelle commande</a>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+  <div class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>N°</th><th>Fournisseur</th><th>Date</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for c in commandes %}
+          <tr>
+            <td><a href="{% url 'detail_commande' c.pk %}" style="color:var(--primary);">{{ c.numero }}</a></td>
+            <td>{{ c.fournisseur.nom }}</td>
+            <td>{{ c.date_commande|date:"d/m/Y" }}</td>
+            <td>{{ c.montant_total|floatformat:0 }} FCFA</td>
+            <td>
+              <span class="badge {% if c.statut == 'recue' %}badge-success{% elif c.statut == 'annulee' %}badge-danger{% elif c.statut == 'partielle' %}badge-warning{% else %}badge-info{% endif %}">
+                {{ c.get_statut_display }}
+              </span>
+            </td>
+            <td><a href="{% url 'detail_commande' c.pk %}" class="btn btn-sm btn-outline">Voir</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">Aucune commande</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

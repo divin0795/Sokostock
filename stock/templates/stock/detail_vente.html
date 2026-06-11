@@ -1,0 +1,341 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Vente {{ vente.numero }}{% endblock %}
+{% block page_title %}Détail de la vente{% endblock %}
+
+{% block topbar_actions %}
+<div class="header-actions">
+    <a href="{% url 'rapports' %}" class="btn btn-outline">← Rapports</a>
+    <button onclick="window.print()" class="btn btn-primary">🖨 Imprimer</button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- STRUCTURE DU HEADER (TOPBAR) --- */
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    /* 📱 MOBILE */
+
+    @media (max-width: 768px) {
+
+        header,
+        .topbar {
+            height: auto !important;
+            padding: 10px 0 !important;
+        }
+
+        .topbar-content,
+        [class*="topbar"] {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+        }
+
+        .header-actions {
+            width: 100%;
+            display: flex !important;
+            gap: 8px;
+        }
+
+        .header-actions .btn {
+            flex: 1;
+            justify-content: center;
+            padding: 10px !important;
+            font-size: 0.85rem;
+        }
+
+        .detail-card {
+            max-width: 100% !important;
+            margin: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr !important;
+            gap: 15px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 0 -15px;
+        }
+
+        table {
+            font-size: 0.85rem;
+        }
+
+        th,
+        td {
+            white-space: nowrap;
+            padding: 12px 10px !important;
+        }
+    }
+
+    /* --- GÉNÉRAL --- */
+
+    .detail-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        font-weight: 700;
+    }
+
+    .summary-box {
+        margin-top: 16px;
+        background: var(--surface-2);
+        padding: 16px;
+        border-radius: var(--radius);
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .summary-row.total {
+        font-size: 1.2rem;
+        font-weight: 800;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+
+    @media print {
+
+        .btn,
+        .sidebar,
+        .topbar {
+            display: none !important;
+        }
+
+        .detail-card {
+            border: none !important;
+            box-shadow: none !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card detail-card">
+
+    <div class="card-header">
+
+        <p class="card-title">
+            Vente {{ vente.numero }}
+        </p>
+
+        {% if vente.statut == 'annulee' %}
+
+            <span class="badge badge-danger">
+                Annulée
+            </span>
+
+        {% elif vente.mode_paiement == 'credit' %}
+
+            <span class="badge badge-warning">
+                À crédit
+            </span>
+
+        {% else %}
+
+            <span class="badge badge-success">
+                ✓ Complétée
+            </span>
+
+        {% endif %}
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="info-grid">
+
+            <div>
+                <p class="info-label">Client</p>
+
+                <p class="info-value">
+                    {{ vente.client_nom }}
+                </p>
+
+                {% if vente.client_telephone %}
+                    <p style="font-size:0.82rem;">
+                        {{ vente.client_telephone }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div>
+                <p class="info-label">Date</p>
+
+                <p class="info-value">
+                    {{ vente.created_at|date:"d/m/Y à H:i" }}
+                </p>
+            </div>
+
+            <div>
+                <p class="info-label">Mode de paiement</p>
+
+                <p class="info-value">
+                    {{ vente.get_mode_paiement_display }}
+                </p>
+            </div>
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Prix U.</th>
+                        <th>Qté</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for ligne in vente.lignes.all %}
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                {{ ligne.produit.nom }}
+                            </strong>
+                        </td>
+
+                        <td>
+                            {{ ligne.prix_unitaire|floatformat:0 }} F
+                        </td>
+
+                        <td>
+                            {{ ligne.quantite }}
+                        </td>
+
+                        <td>
+                            <strong>
+                                {{ ligne.sous_total|floatformat:0 }} F
+                            </strong>
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="summary-box">
+
+            <div class="summary-row">
+                <span>Sous-total HT</span>
+
+                <strong>
+                    {{ vente.total_ht|floatformat:0 }} F
+                </strong>
+            </div>
+
+            {% if vente.remise > 0 %}
+
+            <div class="summary-row" style="color:var(--danger);">
+
+                <span>
+                    Remise ({{ vente.remise }}%)
+                </span>
+
+                {% if montant_remise %}
+
+                    <strong>
+                        -{{ montant_remise|floatformat:0 }} F
+                    </strong>
+
+                {% else %}
+
+                    <strong>
+                        -{{ vente.remise }}%
+                    </strong>
+
+                {% endif %}
+
+            </div>
+
+            {% endif %}
+
+            <div class="summary-row total">
+
+                <span>
+                    TOTAL TTC
+                </span>
+
+                <span>
+                    {{ vente.total_ttc|floatformat:0 }} FCFA
+                </span>
+
+            </div>
+
+            <div class="summary-row"
+                 style="margin-top:10px; color:var(--text-muted);">
+
+                <span>
+                    Montant reçu
+                </span>
+
+                <span>
+                    {{ vente.montant_recu|floatformat:0 }} F
+                </span>
+
+            </div>
+
+            <div class="summary-row"
+                 style="color:var(--success); font-weight:700;">
+
+                <span>
+                    Monnaie rendue
+                </span>
+
+                <span>
+                    {{ vente.monnaie_rendue|floatformat:0 }} F
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

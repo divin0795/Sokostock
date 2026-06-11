@@ -169,3 +169,49 @@ def profil_commerce(request):
     else:
         form = CommerceForm(instance=commerce)
     return render(request, 'stock/profil_commerce.html', {'form': form, 'commerce': commerce})
+
+
+# ── MOUVEMENTS DE STOCK ───────────────────────────────────────────────────────
+
+from django.core.paginator import Paginator
+
+
+@login_required
+def mouvements_stock(request):
+    type_filtre = request.GET.get('type', '')
+    produit_filtre = request.GET.get('produit', '')
+    date_debut = request.GET.get('date_debut', '')
+    date_fin = request.GET.get('date_fin', '')
+
+    mvts = (
+        MouvementStock.objects
+        .filter(produit__user=request.user)
+        .select_related('produit')
+        .order_by('-created_at')
+    )
+
+    if type_filtre:
+        mvts = mvts.filter(type_mouvement=type_filtre)
+    if produit_filtre:
+        mvts = mvts.filter(produit_id=produit_filtre)
+    if date_debut:
+        mvts = mvts.filter(created_at__date__gte=date_debut)
+    if date_fin:
+        mvts = mvts.filter(created_at__date__lte=date_fin)
+
+    nb_total = mvts.count()
+    paginator = Paginator(mvts, 50)
+    page = request.GET.get('page', 1)
+    mouvements = paginator.get_page(page)
+
+    produits = Produit.objects.filter(user=request.user, actif=True).order_by('nom')
+
+    return render(request, 'stock/mouvements.html', {
+        'mouvements': mouvements,
+        'produits': produits,
+        'nb_total': nb_total,
+        'type_filtre': type_filtre,
+        'produit_filtre': produit_filtre,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    })

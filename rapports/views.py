@@ -10,6 +10,7 @@ from datetime import timedelta
 from decimal import Decimal
 import json
 
+from django.core.paginator import Paginator
 from stock.models import Produit, Vente, LigneVente, MouvementStock
 from clients.models import Dette
 
@@ -289,7 +290,11 @@ def rapports(request):
         nb=Count('id')
     ).order_by('-total')
 
-    historique = ventes.order_by('-created_at')[:20]
+    # Pagination historique
+    historique_qs = ventes.order_by('-created_at')
+    paginator = Paginator(historique_qs, 25)
+    page = request.GET.get('page', 1)
+    historique = paginator.get_page(page)
 
     context = {
         'periode': str(nb_jours),
@@ -301,6 +306,7 @@ def rapports(request):
         'top': top,
         'repartition': repartition,
         'historique': historique,
+        'paginator': paginator,
         'periods': [('7', '7 jours'), ('30', '30 jours'), ('90', '90 jours'), ('365', '1 an')],
     }
 

@@ -1,0 +1,96 @@
+{% extends 'base_app.html' %}
+{% block title %}Nouvelle commande{% endblock %}
+{% block page_title %}Nouvelle commande fournisseur{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'liste_commandes' %}" class="btn btn-outline">← Retour</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.ligne-produit { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:center; margin-bottom:10px; }
+@media(max-width:768px){ .ligne-produit { grid-template-columns:1fr 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><p class="card-title">Informations commande</p></div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;display:block;">Fournisseur *</label>
+          <select name="fournisseur_id" class="form-control" required>
+            <option value="">-- Choisir --</option>
+            {% for f in fournisseurs %}<option value="{{ f.pk }}">{{ f.nom }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;display:block;">Livraison prévue</label>
+          <input type="date" name="date_livraison" class="form-control">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;display:block;">Note</label>
+          <textarea name="note" class="form-control" rows="2" placeholder="Note optionnelle..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <p class="card-title">Produits commandés</p>
+        <button type="button" onclick="ajouterLigne()" class="btn btn-sm btn-outline">+ Ajouter ligne</button>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:8px;">
+          <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">PRODUIT</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">QUANTITÉ</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">PRIX ACHAT</span>
+          <span></span>
+        </div>
+        <div id="lignes"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;">Créer la commande</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const produits = [
+  {% for p in produits %}
+  { id: {{ p.pk }}, nom: "{{ p.nom|escapejs }}", prix: {{ p.prix_achat }} },
+  {% endfor %}
+];
+
+let count = 0;
+
+function ajouterLigne() {
+  const id = count++;
+  const options = produits.map(p => `<option value="${p.id}" data-prix="${p.prix}">${p.nom}</option>`).join('');
+  const div = document.createElement('div');
+  div.className = 'ligne-produit';
+  div.id = `ligne-${id}`;
+  div.innerHTML = `
+    <select name="produit_id" class="form-control" onchange="majPrix(this, ${id})" required>
+      <option value="">-- Produit --</option>${options}
+    </select>
+    <input type="number" name="quantite" class="form-control" placeholder="Qté" min="1" required>
+    <input type="number" name="prix_unitaire" id="prix-${id}" class="form-control" placeholder="Prix achat" min="0" step="1" required>
+    <button type="button" onclick="document.getElementById('ligne-${id}').remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;">🗑</button>
+  `;
+  document.getElementById('lignes').appendChild(div);
+}
+
+function majPrix(sel, id) {
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById(`prix-${id}`).value = opt.dataset.prix || '';
+}
+
+ajouterLigne();
+</script>
+{% endblock %}

@@ -1,5 +1,21 @@
 {% extends 'base_app.html' %}
-{% block title %}Rapports{% endblock %}
+{% block title %}Rapports
+    <!-- Pagination -->
+    {% if historique.has_other_pages %}
+    <div style="padding:16px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+      {% if historique.has_previous %}
+      <a href="?page={{ historique.previous_page_number }}&periode={{ periode }}" class="btn btn-sm btn-outline">← Préc.</a>
+      {% endif %}
+      <span style="padding:6px 12px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:0.85rem;">
+        Page {{ historique.number }} / {{ historique.paginator.num_pages }}
+      </span>
+      {% if historique.has_next %}
+      <a href="?page={{ historique.next_page_number }}&periode={{ periode }}" class="btn btn-sm btn-outline">Suiv. →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+{% endblock %}
 {% block page_title %}Rapports & Analyses{% endblock %}
 
 {% block topbar_actions %}

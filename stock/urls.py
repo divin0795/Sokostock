@@ -12,6 +12,9 @@ urlpatterns = [
     # Catégories
     path('categories/', views.categories, name='categories'),
 
+    # Mouvements stock
+    path('mouvements/', views.mouvements_stock, name='mouvements_stock'),
+
     # Profil commerce
     path('profil/', views.profil_commerce, name='profil_commerce'),
 ]

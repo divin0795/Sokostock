@@ -68,7 +68,7 @@ MIDDLEWARE = [
     'licenses.middleware.LicenseRequiredMiddleware',
 ]
 
-ROOT_URLCONF = 'sokostock.urls'
+ROOT_URLCONF = 'Sokostock.urls'
 
 TEMPLATES = [
     {
@@ -85,7 +85,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'sokostock.wsgi.application'
+WSGI_APPLICATION = 'Sokostock.wsgi.application'
 
 
 # Database
